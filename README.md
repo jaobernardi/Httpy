@@ -1,7 +1,7 @@
 # Webpy
 *by bernard*
 
-Webpy is a eazy and simple webserver build in python.
+Webpy is an easy and simple webserver built in python.
 
 ### How to utilize
  ```python
