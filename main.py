@@ -70,7 +70,7 @@ def execute(code, _globals={}, _locals={}):
 			return fake_stdout.getvalue()
 
 
-def pythonfier(contents, vars={}):
+def pythonfier(contents, vars={}, path=""):
 	code = contents
 	cookie = ""
 	code_lines = contents.replace("\n", "\\n").split("<python>")[1:]
@@ -85,20 +85,30 @@ def pythonfier(contents, vars={}):
 		cd = code_line.split("</python>")[0].replace("•", " ")[cut_size:].replace("\\n", "\n")
 		code_exec = execute(cd, _globals=vars)
 		check = code_exec.split("⌠")
+		if code_exec.startswith("load_other"):
+			with open(code_exec.split("load_other:")[1][:-1], "rb") as f:
+				return "", f.read()
 		if len(check) == 2:
 			cookie = check[1]
-			code_exec = check[0]		
+			code_exec = check[0]
 		code = code.replace("<python>"+(code_line.split("</python>")[0]+"</python>").replace("\\n", "\n").replace("•", "\t"), code_exec)
 	return cookie, code.encode()
 
 
 class WebServer(object):
-	def __init__(self, port, content_dir, host=None):
+	def __init__(self, port, content_dir, name, host=None, HTTPS=False, HTTPS_port=443, certfilee=None, keyfilee=None):
 		self.port = port
+		self.port_https = HTTPS_port
+		self.name = name
+		self.https = HTTPS
 		if not host: 
 			self.host = socket.gethostbyname(socket.gethostname())
 		else:
 			self.host = host
+		if self.https:
+			self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+			self.context.load_cert_chain(certfile=certfilee, keyfile=keyfilee)
+			self.https_sock = socket.socket()
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		#Content dir treatment
 		if content_dir.startswith("\\"): content_dir = content_dir[1:]
@@ -108,19 +118,22 @@ class WebServer(object):
 		#A masterpiece
 		class events(object):
 			def __init__(self):
-				self.hooks = {"requests": [], "requests_handler": {}}
+				self.hooks = {"requests": [], "requests_handler": {}, "on_ready": []}
 			def request_input(self, function):			
 				self.hooks["requests"].append(function)
 			def request_handler(self, type):
 				def wrapper(function):		
 					self.hooks["requests_handler"][type.upper()] = function
 				return wrapper
+			def on_ready(self, function):
+				self.hooks["on_ready"].append(function)
+
 		self.events = events()
 
 	def _headers(self, status, cookie=""):
-		preset = f"\nServer: Webpy\nConnection: close\n\n"
+		preset = f"\nServer: {self.name}\nConnection: close\nX-Frame-Options: SAMEORIGIN\n\n"
 		if cookie != "":
-			preset = f"\nServer: Webpy\nConnection: close\n{cookie}\n\n"
+			preset = f"\nServer: {self.name}\nConnection: close\nX-Frame-Options: SAMEORIGIN\n{cookie}\n\n"
 		if status == 200:
 			header = "HTTP/1.1 200 Response OK" + preset
 		elif status == 401:
@@ -130,10 +143,11 @@ class WebServer(object):
 		elif status == 404:
 			header = "HTTP/1.1 404 Not Found." + preset
 		else:
-			header = "HTTP/1.1 500 Server Could Not Process the Request." + preset
+			header = "HTTP/1.1 405 Method Not Allowed." + preset
 		return header
 
-	def _request_handler(self, type, body, addr):
+	def _request_handler(self, type, body, addr, https_client, data):
+		# Vars for python env
 		cookies = ""
 		vars = {"cookies": {}, "url_params": {}, "ip": addr}
 		for line in body.split("\n"):
@@ -144,13 +158,13 @@ class WebServer(object):
 						if cokizinho.endswith("\r"):
 							vars["cookies"].update({cokizinho.split("=")[0]: cokizinho.split("=")[1][:-1]})
 						else:
-							vars["cookies"].update({cokizinho.split("=")[0]: cokizinho.split("=")[1]})
-		
+							vars["cookies"].update({cokizinho.split("=")[0]: cokizinho.split("=")[1]})		
 		try:
 			for param in body.split(" ")[1].split("?")[1].split("&"):
 				vars["url_params"].update({param.split("=")[0]: param.split("=")[1]})
 		except:
 			pass
+			
 		# Filename treatment
 
 		file = body.split(" ")[1].split("?")[0]
@@ -159,23 +173,22 @@ class WebServer(object):
 			else:
 				file = file[1:]
 			file = self.content_dir + file.replace("/", "\\")
-			if not file.endswith("\\") and os.path.isdir(file):
-				if os.path.isdir(file+"\\"):
+			if not file.endswith("\\") and os.path.isdir(self.content_dir+file):
+				if os.path.isdir(self.content_dir+file+"\\"):
 					file += "\\"
 					return b"HTTP/1.1 302 Path Realocation\nConnection: Close\nLocation: "+file.replace("\\", "/").encode("utf-8")+b"\nServer: Stronghold Proxy\n\n"
 			if os.path.isdir(file) and file.endswith("\\"):
 				file += "\\index.html"
 		
 		for event_function in self.events.hooks["requests"]:
-			event_function(type, body, addr, file, vars["cookies"])
-		
+			event_function(type, body, addr, file, vars["cookies"], vars, https_client)
 		if type in self.events.hooks["requests_handler"]:
-			return self.events.hooks["requests_handler"][type](type, body, addr, file, vars["cookies"], vars["url_params"])
-		
+			return self.events.hooks["requests_handler"][type](type, body, addr, file, vars["cookies"], vars["url_params"], vars, https_client)
+
 		elif type in ["GET", "HEAD"]:
 			try:
 				file_contents = htmlfy(open(file, "rb").read())
-				if file.endswith(".html"): cookies, file_contents = pythonfier(file_contents.decode(), vars)
+				if file.endswith(".html") or file.endswith(".api"): cookies, file_contents = pythonfier(file_contents.decode(), vars, file)
 				return self._headers(200, cookies).encode() + file_contents
 			except FileNotFoundError:
 				return self._headers(
@@ -186,58 +199,44 @@ class WebServer(object):
 			except Exception as e:
 				return self._headers(500).encode() + htmlfy(
 					f"<html><head><title>500</title></head><body><center><h1>Erro 500</h1><br><p>Um erro occoreu no servidor. detalhes:<br>{e}</p></center></body></html>").encode()
-		elif type == "POST":
-			values = {"cookies": {}, "ip": addr}
-			for line in body.split("\n"):
-				if line.startswith("Cookie:"):
-					cook = line[8:].split("; ")
-					for cokizinho in cook:
-						if cokizinho.endswith("\r"):
-							values["cookies"].update({cokizinho.split("=")[0]: cokizinho.split("=")[1][:-1]})
-						else:
-							values["cookies"].update({cokizinho.split("=")[0]: cokizinho.split("=")[1]})
-			try:
-				for value in unquote(body.split("\n")[-1]).split("&"):
-					values.update({value.split("=")[0]: value.split("=")[1]})
-			except Exception as e:
-				raise e
-				exit(1)
-			if file == self.content_dir + "/": file = self.content_dir + "index.html"
-			try:
-				file_contents = htmlfy(open(file, "rb").read())
-				if file.endswith(".html"): cookies, file_contents = pythonfier(file_contents.decode("utf-8"), values)
-				return self._headers(200, cookies).encode() + file_contents
-			except FileNotFoundError:
-				return self._headers(
-					404).encode() + b"<html><head><title>404</title></head><body><center><h1>Erro 404</h1></center></body></html>"
-			except OSError:
-				return self._headers(403).encode() + htmlfy(
-					f"<html><head><title>403</title></head><body><center><h1>Erro 403</h1><br><p>Esta p&aacutegina &eacute restrita.</p></center></body></html>".encode()).encode()
-			except Exception as e:
-				return self._headers(500).encode() + htmlfy(
-					f"<html><head><title>500</title></head><body><center><h1>Erro 500</h1><br><p>Um erro occoreu no servidor. detalhes:<br>{e}</p></center></body></html>".encode()).encode()
-		return self._headers(200).encode() + body.encode()
+		return self._headers(405).encode()
 
-	def _handler(self, client, addr):
+	def _handler(self, client, addr, https_client=False):
+		data = b""
+		length = -1		
+
 		while True:
-			data = client.recv(1000024)
-			if not data: break
-			try:
-				data = data.decode('utf-8')
-			except Exception as e:
-				client.close()
-				for event_function in self.events.hooks["requests"]:
-					event_function(None, data, addr, None, None)
-				break
-			method = data.split(" ")[0]
-			response = self._request_handler(method, data, addr[0])
-			client.send(response)
-			client.close()	
-			break
+			if https_client:
+				data_temp = client.read()
+			else:
+				data_temp = client.recv(1024)
+			data += data_temp
+			if b"Content-Length" in data_temp:
+				length = int(data_temp.split(b"\nContent-Length:")[1].split(b" \n")[0].split(b"\n")[0].split(b" ")[1].decode("utf-8"))
+			if length > 0:
+				if len(data) >= length:
+					break
+			else:
+				if data.endswith(b"\n\n") or data.endswith(b"\r\n\r\n") or not data_temp:
+					break
+		ends = b"\r\n\r\n"
+		if data.endswith(b"\n\n"):
+			ends = b"\n\n"
+		
+		header = data.split(ends)[0].decode("utf-8")+ends.decode("utf-8")
+		method = header.split(" ")[0]
+		response = self._request_handler(method, header, addr[0], https_client, data)
 
+		client.send(response)
+		if https_client:
+			client.shutdown(socket.SHUT_RDWR)
+		client.close()	
+		exit()
 	def start(self):
 		stop = False
 		try:
+			if self.https:
+				self.https_sock.bind((self.host, self.port_https))
 			self.socket.bind((self.host, self.port))
 		except Exception as e:
 			self.socket.close()
@@ -246,8 +245,26 @@ class WebServer(object):
 		self._listener()
 
 	def _listener(self):
-		self.socket.listen(5)
-		while True:
-			(client, addr) = self.socket.accept()
-			client.settimeout(60)
-			threading.Thread(target=self._handler, args=(client, addr)).start()
+		def https_listener():
+			for event_function in self.events.hooks["on_ready"]:
+				event_function("HTTPS")
+			self.https_sock.listen(5)
+			while True:	
+				(newsocket, fromaddr) = self.https_sock.accept()
+				try:
+					conn = self.context.wrap_socket(newsocket, server_side=True)
+				except ssl.SSLError:
+					continue
+				threading.Thread(target=self._handler, args=(conn, fromaddr, True)).start()
+		def http_listener():
+			for event_function in self.events.hooks["on_ready"]:
+				event_function("HTTP")
+			self.socket.listen(5)
+			while True:
+				(client, addr) = self.socket.accept()
+				client.settimeout(60)
+				threading.Thread(target=self._handler, args=(client, addr)).start()
+		if self.https:		
+			threading.Thread(target=https_listener).start()	
+		http_listener()
+		
