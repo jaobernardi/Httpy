@@ -109,8 +109,12 @@ class HTTPS_Server(Server):
             data += incoming
             if incoming.endswith(b"\r\n\r\n") or not incoming or incoming == b"": break
             print(incoming)
-        x = Request.from_request(data)
-        response = self._call_methods(x.method, x.path, x)
+        try:
+            x = Request.from_request(data)
+        except ValueError:
+            response = Request.response(502, "Not Implemented", {"Server": "Webpy/2.0", "Connection": "closed"})
+        else:
+            response = self._call_methods(x.method, x.path, x)
         connection.send(response)
         connection.shutdown(socket.SHUT_RDWR)
 
