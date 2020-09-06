@@ -8,7 +8,7 @@
 - [ ] Python formatting in html
 - [ ] MIME type in Document class
 - [ ] Default headers per server
-- [ ] 
+- [ ] Per host handler
 
 ### ❓ How to use
 ```python
