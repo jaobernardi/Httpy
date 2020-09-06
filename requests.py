@@ -15,6 +15,7 @@ class Request:
     @classmethod
     def from_request(cls, request):
         path = request.split(b"\n")[0].split(b" ")[1].decode()
+        print(path)
         path, args = path.split("?") if "?" in path else (path, "")
         arguments = {}
         if args != "":
