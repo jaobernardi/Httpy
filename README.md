@@ -7,6 +7,8 @@
 - [ ] Document class
 - [ ] Python formatting in html
 - [ ] MIME type in Document class
+- [ ] Default headers per server
+- [ ] 
 
 ### ❓ How to use
 ```python
@@ -20,7 +22,7 @@ host, port = "127.0.0.1", 80
 server = HTTP_Server(host, port)
 
 # Create an handler for requests
-@server.method(RequestMethod.GET, route="*") # Using the route as '*' will send all traffic with the GET method to this handler and override any other handler
+@server.method(RequestMethod.GET, route="*") # Using the route as '*' will use this handler as a fallback for the GET method.
 def GET_Handler(request):
   # do stuff
   return Request.response(
