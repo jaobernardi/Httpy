@@ -2,30 +2,35 @@ from . import RequestMethod, StreamDirection
 
 
 class Request:
-    def __init__(self, body: bytes, method: RequestMethod, status_code: int, path, headers: dict, stream_direction: StreamDirection=StreamDirection.UNKNOWN, status_msg = "OK"):
+    def __init__(self, body: bytes, method: RequestMethod, status_code: int, path, headers: dict, arguments: dict, stream_direction: StreamDirection=StreamDirection.UNKNOWN, status_msg = "OK"):
         self.body = body
         self.method = method
         self.status_code = status_code
         self.stream_direction = stream_direction
         self.path = path
         self.headers = headers
+        self.arguments = arguments
         self.status_msg = status_msg
 
     @classmethod
     def from_request(cls, request):
         print(request)
         path = request.split(b"\n")[0].split(b" ")[1].decode()
+        path, args = path.split("?")
+        arguments = {}
+        for key in args.split("&"):
+            arguments[key.split("=")[0]] = key.split("=")[1]
         method = RequestMethod(request.split(b"\n")[0].split(b" ")[0].decode())
         status_code = 0
         headers = {}
         for head in request.split(b"\r\n\r\n")[0].split(b"\r\n")[1:]:            
             headers[head.split(b": ")[0].decode()] = head.split(b": ")[1].decode()
         
-        return cls(request.split(b"\r\n\r\n")[1], method, status_code, path, headers, StreamDirection.UPSTREAM)
+        return cls(request.split(b"\r\n\r\n")[1], method, status_code, path, headers, arguments, StreamDirection.UPSTREAM)
     
     @classmethod
     def response(cls, status_code, status_msg, headers, body=b""):
-        x = cls(body, RequestMethod.GET, status_code, "", headers, StreamDirection.DOWNSTREAM, status_msg)
+        x = cls(body, RequestMethod.GET, status_code, "", headers, {}, StreamDirection.DOWNSTREAM, status_msg)
         return x.build()
     
     def build(self):
