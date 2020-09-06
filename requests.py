@@ -18,7 +18,7 @@ class Request:
         print(path)
         path, args = path.split("?") if "?" in path else (path, "")
         arguments = {}
-        if args != "":
+        if args != "" and "=" in args:
             for key in args.split("&"):
                 arguments[key.split("=")[0]] = key.split("=")[1]
         method = RequestMethod(request.split(b"\n")[0].split(b" ")[0].decode())
