@@ -23,7 +23,7 @@ class Document:
         x = cls(data)
         extension = os.path.basename(path).split(".")[-1]
         if extension.lower() in MIMETypes.types:
-            x.type = MIMETypes.types[extension.lower()]
+            x._type = MIMETypes.types[extension.lower()]
         file.close()
         return x
 
