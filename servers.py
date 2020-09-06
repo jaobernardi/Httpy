@@ -53,9 +53,10 @@ class Server:
 
     def _call_methods(self, method: RequestMethod, route, request):
         host = request.headers["Host"] if "Host" in request.headers else "*"
-        if host not in self.functions[method]:
-            host = "*"
+
         if method in self.functions:
+            if host not in self.functions[method]:
+                host = "*"
             if route in self.functions[method][host]:
                 return self.functions[method][host][route](request, self)
             elif "*" in self.functions[method][host]:
