@@ -43,7 +43,8 @@ class Server:
     def method(self, method: RequestMethod, host="*", route="*"):
         def wrapper(function):
             if method not in self.functions:
-                self.functions[method] = {host: {}}
+                self.functions[method] = {}
+                
             if host not in self.functions[method]:
                 self.functions[method][host] = {}
             self.functions[method][host].update({route: function})
