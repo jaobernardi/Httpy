@@ -16,10 +16,11 @@ class Request:
     def from_request(cls, request):
         print(request)
         path = request.split(b"\n")[0].split(b" ")[1].decode()
-        path, args = path.split("?")
+        path, args = path.split("?") if "?" in path else (path, "")
         arguments = {}
-        for key in args.split("&"):
-            arguments[key.split("=")[0]] = key.split("=")[1]
+        if "&" in args:
+            for key in args.split("&"):
+                arguments[key.split("=")[0]] = key.split("=")[1]
         method = RequestMethod(request.split(b"\n")[0].split(b" ")[0].decode())
         status_code = 0
         headers = {}
