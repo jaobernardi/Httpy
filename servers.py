@@ -119,7 +119,7 @@ class HTTPS_Server(Server):
         x = Request.from_request(data)
         response = self._call_methods(x.method, x.path, x)
         connection.send(response)
-        connection.shutdown()
+        connection.shutdown(socket.SHUT_RDWR)
 
     def run(self):
         self.socket.bind((self.host, self.port))
