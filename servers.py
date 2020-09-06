@@ -57,10 +57,10 @@ class HTTP_Server(Server):
 
     def _call_methods(self, method: RequestMethod, route, request):
         if method in self.functions:
-            if "*" in self.functions[method]:
-                return self.functions[method]["*"](request)
-            elif route in self.functions[method]:
+            if route in self.functions[method]:
                 return self.functions[method][route](request)
+            elif "*" in self.functions[method]:
+                return self.functions[method]["*"](request)
         return Request.response(502, "Not Implemented", {"Server": "Webpy/2.0", "Connection": "closed"})
 
     def handler(self, connection, address):
