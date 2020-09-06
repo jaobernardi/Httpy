@@ -49,19 +49,20 @@ class HTTP_Server(Server):
         self.functions = {}
         self.threads = []
 
-    def method(self, method: RequestMethod, route="*"):
+    def method(self, method: RequestMethod, host="*", route="*"):
         def wrapper(function):
             if method not in self.functions:
-                self.functions[method] = {}           
-            self.functions[method].update({route: function})
+                self.functions[method] = {host: {}}      
+            self.functions[method][host].update({route: function})
         return wrapper
 
     def _call_methods(self, method: RequestMethod, route, request):
-        if method in self.functions:
-            if route in self.functions[method]:
-                return self.functions[method][route](request)
-            elif "*" in self.functions[method]:
-                return self.functions[method]["*"](request)
+        host = request.headers["Host"] if "Host" in request.headers else "*"
+        if method in self.functions and host in self.functions[method]:
+            if route in self.functions[method][host]:
+                return self.functions[method][host][route](request)
+            elif "*" in self.functions[method][host]:
+                return self.functions[method][host]["*"](request)
         return Request.response(502, "Not Implemented", {"Server": "Webpy/2.0", "Connection": "closed"})
 
     def handler(self, connection, address):
@@ -94,19 +95,20 @@ class HTTPS_Server(Server):
         self.functions = {}
         self.threads = []
 
-    def method(self, method: RequestMethod, route="*"):
+    def method(self, method: RequestMethod, host="*", route="*"):
         def wrapper(function):
             if method not in self.functions:
-                self.functions[method] = {}           
-            self.functions[method].update({route: function})
+                self.functions[method] = {host: {}}      
+            self.functions[method][host].update({route: function})
         return wrapper
 
     def _call_methods(self, method: RequestMethod, route, request):
-        if method in self.functions:
-            if "*" in self.functions[method]:
-                return self.functions[method]["*"](request)
-            elif route in self.functions[method]:
-                return self.functions[method][route](request)
+        host = request.headers["Host"] if "Host" in request.headers else "*"
+        if method in self.functions and host in self.functions[method]:
+            if route in self.functions[method][host]:
+                return self.functions[method][host][route](request)
+            elif "*" in self.functions[method][host]:
+                return self.functions[method][host]["*"](request)
         return Request.response(502, "Not Implemented", {"Server": "Webpy/2.0", "Connection": "closed"})
 
     def handler(self, connection, address):
