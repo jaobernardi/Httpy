@@ -40,15 +40,6 @@ class Server:
     def port_delete(self):
         raise Exception("You cannot delete the port attribute")
 
-
-# HTTP Server class
-class HTTP_Server(Server):
-    def __init__(self, host, port):
-        super().__init__(host, port)
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.functions = {}
-        self.threads = []
-
     def method(self, method: RequestMethod, host="*", route="*"):
         def wrapper(function):
             if method not in self.functions:
@@ -58,12 +49,23 @@ class HTTP_Server(Server):
 
     def _call_methods(self, method: RequestMethod, route, request):
         host = request.headers["Host"] if "Host" in request.headers else "*"
-        if method in self.functions and host in self.functions[method]:
+        if host not in self.functions[method]:
+            host = "*"
+        if method in self.functions:
             if route in self.functions[method][host]:
                 return self.functions[method][host][route](request)
             elif "*" in self.functions[method][host]:
                 return self.functions[method][host]["*"](request)
         return Request.response(502, "Not Implemented", {"Server": "Webpy/2.0", "Connection": "closed"})
+
+
+# HTTP Server class
+class HTTP_Server(Server):
+    def __init__(self, host, port):
+        super().__init__(host, port)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.functions = {}
+        self.threads = []
 
     def handler(self, connection, address):
         data = b""
@@ -94,22 +96,6 @@ class HTTPS_Server(Server):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.functions = {}
         self.threads = []
-
-    def method(self, method: RequestMethod, host="*", route="*"):
-        def wrapper(function):
-            if method not in self.functions:
-                self.functions[method] = {host: {}}      
-            self.functions[method][host].update({route: function})
-        return wrapper
-
-    def _call_methods(self, method: RequestMethod, route, request):
-        host = request.headers["Host"] if "Host" in request.headers else "*"
-        if method in self.functions and host in self.functions[method]:
-            if route in self.functions[method][host]:
-                return self.functions[method][host][route](request)
-            elif "*" in self.functions[method][host]:
-                return self.functions[method][host]["*"](request)
-        return Request.response(502, "Not Implemented", {"Server": "Webpy/2.0", "Connection": "closed"})
 
     def handler(self, connection, address):
         data = b""
