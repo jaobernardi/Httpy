@@ -20,7 +20,7 @@ host, port = "127.0.0.1", 80
 server = HTTP_Server(host, port)
 
 # Create an handler for requests
-@server.method(RequestMethod.GET, route="*") # Using the route to '*' will send all traffic with the GET method to this handler and override any other handler
+@server.method(RequestMethod.GET, route="*") # Using the route as '*' will send all traffic with the GET method to this handler and override any other handler
 def GET_Handler(request):
   # do stuff
   return Request.response(
