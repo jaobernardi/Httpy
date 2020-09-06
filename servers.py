@@ -8,9 +8,10 @@ from .requests import Request
 
 # Server class
 class Server:
-    def __init__(self, host, port):
+    def __init__(self, host, port, filedir):
         self._host = host
         self._port = port
+        self.filedir = filedir
 
     @property
     def host(self):
@@ -56,16 +57,16 @@ class Server:
             host = "*"
         if method in self.functions:
             if route in self.functions[method][host]:
-                return self.functions[method][host][route](request)
+                return self.functions[method][host][route](request, self)
             elif "*" in self.functions[method][host]:
-                return self.functions[method][host]["*"](request)
+                return self.functions[method][host]["*"](request, self)
         return Request.response(502, "Not Implemented", {"Server": "Webpy/2.0", "Connection": "closed"})
 
 
 # HTTP Server class
 class HTTP_Server(Server):
-    def __init__(self, host, port):
-        super().__init__(host, port)
+    def __init__(self, host, port, filedir):
+        super().__init__(host, port, filedir)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.functions = {}
         self.threads = []
@@ -92,8 +93,8 @@ class HTTP_Server(Server):
 
 # HTTPS Server class
 class HTTPS_Server(Server):
-    def __init__(self, host, port, certfile, keyfile):
-        super().__init__(host, port)
+    def __init__(self, host, port, filedir, certfile, keyfile):
+        super().__init__(host, port, filedir)
         self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         self.context.load_cert_chain(certfile=certfile, keyfile=keyfile)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
