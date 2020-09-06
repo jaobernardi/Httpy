@@ -126,7 +126,7 @@ class HTTPS_Server(Server):
         self.socket.listen(50)
         while True:
             conn, addr = self.socket.accept()
-            conn = self.context.wrap_socket(newsocket, server_side=True)
+            conn = self.context.wrap_socket(conn, server_side=True)
             thread = threading.Thread(target=self.handler, args=(conn, addr))
             self.threads.append(thread)
             thread.start()
