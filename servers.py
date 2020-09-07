@@ -76,11 +76,24 @@ class HTTP_Server(Server):
 
     def handler(self, connection, address):
         data = b""
+        length = None
+        ended = False
+        body = b""
         while True:
-            incoming = connection.recv(1024)
+            incoming = connection.read()
             data += incoming
-            if incoming.endswith(b"\r\n\r\n") or not incoming or incoming == b"": break
-            print(incoming)
+            
+            for line in data.split(b"\r\n"):
+                if line.startswith(b"Content-Length:"):
+                    length = int(line.replace(b"Content-Length: ", b"").replace(b"\r\n", b""))
+
+            
+            if b"\r\n\r\n" in data and length:
+                body += b"\r\n\r\n".join(data.split(b"\r\n\r\n")[1:])
+
+            if b"\r\n\r\n" in data and not length: break
+                
+            if not incoming or incoming == b"" or len(body) >= length: break
         x = Request.from_request(data)
         response = self._call_methods(x.method, x.path, x)
         connection.send(response)
@@ -114,14 +127,13 @@ class HTTPS_Server(Server):
             data += incoming
             
             for line in data.split(b"\r\n"):
-                print(line)
                 if line.startswith(b"Content-Length:"):
                     length = int(line.replace(b"Content-Length: ", b"").replace(b"\r\n", b""))
 
             
             if b"\r\n\r\n" in data and length:
                 body += b"\r\n\r\n".join(data.split(b"\r\n\r\n")[1:])
-            print(data, length, body)    
+
             if b"\r\n\r\n" in data and not length: break
                 
             if not incoming or incoming == b"" or len(body) >= length: break
