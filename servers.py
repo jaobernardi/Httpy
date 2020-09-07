@@ -41,7 +41,7 @@ class Server:
     def port_delete(self):
         raise Exception("You cannot delete the port attribute")
 
-    def method(self, method: RequestMethod, host="*", route="*"):
+    def method(self, method: RequestMethod=RequestMethod.ANY, host="*", route="*"):
         def wrapper(function):
             if method not in self.functions:
                 self.functions[method] = {}
@@ -53,7 +53,9 @@ class Server:
 
     def _call_methods(self, method: RequestMethod, route, request):
         host = request.headers["Host"] if "Host" in request.headers else "*"
-
+        if method not in self.functions:
+            method = RequestMethod.ANY
+            
         if method in self.functions:
             if host not in self.functions[method]:
                 host = "*"

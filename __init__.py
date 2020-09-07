@@ -1,15 +1,24 @@
-from enum import Enum
+from enum import Enum, EnumMeta
+
+
+class FallbackElement(EnumMeta):
+   
+    def __call__(cls, value=object(), *args, **kwargs):
+        if value not in [p for p in cls.__members__]:
+            return next(iter(cls))
+        return super().__call__(value, *args, **kwargs)
 
 
 # Stream direction for Requests
-class StreamDirection(Enum):
+class StreamDirection(Enum, metaclass=FallbackElement):
     UNKNOWN = -1
     UPSTREAM = 1
     DOWNSTREAM = 0
 
 
 # Request type enum
-class RequestMethod(Enum):
+class RequestMethod(Enum, metaclass=FallbackElement):
+    ANY = "UNKNOWN METHOD"
     GET = "GET"
     POST = "POST"
     PUT = "PUT"
