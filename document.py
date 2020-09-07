@@ -7,7 +7,7 @@ class Document:
     def __init__(self, data):
         self.data = data
         self._type = None
-        self.extension
+        self.extension = None
 
     @property
     def type(self):
