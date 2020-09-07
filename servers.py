@@ -100,7 +100,7 @@ class HTTPS_Server(Server):
         super().__init__(host, port, filedir)
         self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         self.context.load_cert_chain(certfile=certfile, keyfile=keyfile)
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.functions = {}
         self.threads = []
 
