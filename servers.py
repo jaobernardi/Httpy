@@ -110,6 +110,7 @@ class HTTPS_Server(Server):
         ended = False
         body = b""
         while True:
+            print(data, length, body)
             for line in data.split(b"\r\n"):
                 if line.startswith(b"Content-Length:"):
                     length = int(line.replace(b"Content-Length: ", "").replace("\r\n", ""))
@@ -123,7 +124,6 @@ class HTTPS_Server(Server):
                 
             if not incoming or incoming == b"" or len(body) >= length: break
             
-            print(incoming)
         try:
             x = Request.from_request(data)
         except ValueError:
