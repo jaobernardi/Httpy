@@ -100,16 +100,29 @@ class HTTPS_Server(Server):
         super().__init__(host, port, filedir)
         self.context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
         self.context.load_cert_chain(certfile=certfile, keyfile=keyfile)
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.functions = {}
         self.threads = []
 
     def handler(self, connection, address):
         data = b""
+        length = None
+        ended = False
+        body = b""
         while True:
+            for line in data.split(b"\r\n"):
+                if line.startswith(b"Content-Length:"):
+                    length = int(line.replace(b"Content-Length: ", "").replace("\r\n", ""))
             incoming = connection.read()
             data += incoming
-            if incoming.endswith(b"\r\n\r\n") or not incoming or incoming == b"": break
+            
+            if b"\r\n\r\n" in data and length:
+                body += b"\r\n\r\n".join(data.split(b"\r\n\r\n")[1:])
+                
+            if b"\r\n\r\n" in data and not length: break
+                
+            if not incoming or incoming == b"" or len(body) >= length: break
+            
             print(incoming)
         try:
             x = Request.from_request(data)
