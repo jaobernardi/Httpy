@@ -110,13 +110,14 @@ class HTTPS_Server(Server):
         ended = False
         body = b""
         while True:
+            incoming = connection.read()
+            data += incoming
             
             for line in data.split(b"\r\n"):
                 print(line)
                 if line.startswith(b"Content-Length:"):
                     length = int(line.replace(b"Content-Length: ", "").replace("\r\n", ""))
-            incoming = connection.read()
-            data += incoming
+
             
             if b"\r\n\r\n" in data and length:
                 body += b"\r\n\r\n".join(data.split(b"\r\n\r\n")[1:])
