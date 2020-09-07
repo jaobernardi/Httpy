@@ -1,6 +1,8 @@
 from bs4 import BeautifulSoup
 from . import MIMETypes
 import os
+from io import StringIO
+import sys
 
 
 class Document:
