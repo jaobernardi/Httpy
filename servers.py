@@ -116,7 +116,7 @@ class HTTPS_Server(Server):
             for line in data.split(b"\r\n"):
                 print(line)
                 if line.startswith(b"Content-Length:"):
-                    length = int(line.replace(b"Content-Length: ", "").replace("\r\n", ""))
+                    length = int(line.replace(b"Content-Length: ", b"").replace(b"\r\n", b""))
 
             
             if b"\r\n\r\n" in data and length:
