@@ -52,7 +52,7 @@ class Server:
         return wrapper
 
     def _call_methods(self, method: RequestMethod, route, request):
-        host = request.headers["Host"] if "Host" in request.headers else "*"
+        host = request.headers["Host"] if "Host" in request.headers else "*" #painel
         
         if method in self.functions:
             if host not in self.functions[method]:
@@ -62,7 +62,7 @@ class Server:
             if host not in self.functions[method]:
                 host = "*"
         
-        print(method, self.functions)
+        print(host, route, method, self.functions)
         
         if method in self.functions:
             if host not in self.functions[method]:
