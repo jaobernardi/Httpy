@@ -59,7 +59,8 @@ class Server:
                 method = RequestMethod.ANY                  
         else:
             method = RequestMethod.ANY
-        
+            if host not in self.functions[method]:
+                host = "*"
         
         print(method, self.functions)
         
