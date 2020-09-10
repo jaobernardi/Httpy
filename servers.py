@@ -52,18 +52,11 @@ class Server:
         return wrapper
 
     def _call_methods(self, method: RequestMethod, route, request):
-        host = request.headers["Host"] if "Host" in request.headers else "*" #painel
+        host = request.headers["Host"] if "Host" in request.headers else "*"
         
-        if method in self.functions:
-            if host not in self.functions[method]:
-                method = RequestMethod.ANY                  
-        else:
+        if method not in self.functions:
             method = RequestMethod.ANY
-            if host not in self.functions[method]:
-                host = "*"
-        
-        print(host, route, method, self.functions)
-        
+            
         if method in self.functions:
             if host not in self.functions[method]:
                 host = "*"
