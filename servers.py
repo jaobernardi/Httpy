@@ -75,7 +75,7 @@ class HTTP_Server(Server):
         self.functions = {}
         self.threads = []
 
-    def handler(self, connection, addr):
+    def handler(self, connection, address):
         data = b""
         length = None
         ended = False
@@ -95,7 +95,7 @@ class HTTP_Server(Server):
             if b"\r\n\r\n" in data and not length: break
                 
             if not incoming or incoming == b"" or len(body) >= length: break
-        x = Request.from_request(data, addr)
+        x = Request.from_request(data, address)
         response = self._call_methods(x.method, x.path, x)
         connection.send(response)
         connection.close()
@@ -140,7 +140,7 @@ class HTTPS_Server(Server):
             if not incoming or incoming == b"" or len(body) >= length: break
             
         try:
-            x = Request.from_request(data)
+            x = Request.from_request(data, address)
         except ValueError:
             response = Request.response(502, "Not Implemented", {"Server": "Webpy/2.0", "Connection": "closed"})
         else:
