@@ -2,9 +2,10 @@ from . import RequestMethod, StreamDirection
 
 
 class Request:
-    def __init__(self, body: bytes, method: RequestMethod, status_code: int, path, headers: dict, arguments: dict, stream_direction: StreamDirection=StreamDirection.UNKNOWN, status_msg = "OK"):
+    def __init__(self, body: bytes, method: RequestMethod, status_code: int, path, headers: dict, arguments: dict, stream_direction: StreamDirection=StreamDirection.UNKNOWN, status_msg = "OK", address=None):
         self.body = body
         self.method = method
+        self.address = address
         self.status_code = status_code
         self.stream_direction = stream_direction
         self.path = path
@@ -13,7 +14,7 @@ class Request:
         self.status_msg = status_msg
 
     @classmethod
-    def from_request(cls, request):
+    def from_request(cls, request, address):
         path = request.split(b"\n")[0].split(b" ")[1].decode()
         path, args = path.split("?") if "?" in path else (path, "")
         arguments = {}
@@ -26,7 +27,7 @@ class Request:
         for head in request.split(b"\r\n\r\n")[0].split(b"\r\n")[1:]:            
             headers[head.split(b": ")[0].decode()] = head.split(b": ")[1].decode()
         
-        return cls(request.split(b"\r\n\r\n")[1], method, status_code, path, headers, arguments, StreamDirection.UPSTREAM)
+        return cls(request.split(b"\r\n\r\n")[1], method, status_code, path, headers, arguments, StreamDirection.UPSTREAM, address=address)
     
     @classmethod
     def response(cls, status_code, status_msg, headers, body=b""):
