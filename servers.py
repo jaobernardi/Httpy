@@ -75,7 +75,7 @@ class HTTP_Server(Server):
         self.functions = {}
         self.threads = []
 
-    def handler(self, connection, address):
+    def handler(self, connection, addr):
         data = b""
         length = None
         ended = False
@@ -95,7 +95,7 @@ class HTTP_Server(Server):
             if b"\r\n\r\n" in data and not length: break
                 
             if not incoming or incoming == b"" or len(body) >= length: break
-        x = Request.from_request(data, address)
+        x = Request.from_request(data, addr)
         response = self._call_methods(x.method, x.path, x)
         connection.send(response)
         connection.close()
