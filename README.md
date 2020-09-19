@@ -1,4 +1,4 @@
-# 🌐 Webpy
+# 🌐 HttPython
 #### A simple-to-use http and https server, simillar to flask, in python.
 
 ### ✅ To-do 
@@ -12,8 +12,8 @@
 
 ### ❓ How to use
 ```python
-from webpy.servers import HTTP_Server
-from webpy import RequestMethod
+from httpython.servers import HTTP_Server
+from httpython import RequestMethod
 
 # Define the port and host
 host, port = "127.0.0.1", 80
@@ -30,7 +30,7 @@ def GET_Handler(request):
   return Request.response(
       500, # Status code
       "Not Implemented", # Message
-      {"Server": "Webpy/2.0", "Connection": "closed"}, # Headers
+      {"Server": "httpy/2.0", "Connection": "closed"}, # Headers
       b"" # Body
   )
 
@@ -40,7 +40,7 @@ def API_Handler(request):
   return Request.response(
       500, # Status code
       "Not Implemented", # Message
-      {"Server": "Webpy/2.0", "Connection": "closed"}, # Headers
+      {"Server": "httpy/2.0", "Connection": "closed"}, # Headers
       b'{"foo": "bar"}' # Body
   )
 

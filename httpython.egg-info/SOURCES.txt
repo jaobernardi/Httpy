@@ -1,0 +1,10 @@
+README.md
+setup.py
+httpython/__init__.py
+httpython/document.py
+httpython/requests.py
+httpython/servers.py
+httpython.egg-info/PKG-INFO
+httpython.egg-info/SOURCES.txt
+httpython.egg-info/dependency_links.txt
+httpython.egg-info/top_level.txt
