@@ -1,10 +1,10 @@
 import setuptools
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="webpy", # Replace with your own username
+    name="webpy-framework", # Replace with your own username
     version="0.2.5",
     author="Jão Bernardi",
     author_email="joao_bernardi@outlook.com",
