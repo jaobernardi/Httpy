@@ -81,7 +81,7 @@ class HTTP_Server(Server):
         ended = False
         body = b""
         while True:
-            incoming = connection.read()
+            incoming = connection.recv(1024)
             data += incoming
             
             for line in data.split(b"\r\n"):
