@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="httpython", # Replace with your own username
+    name="httpython",
     version="0.2.6",
     author="Jão Bernardi",
     author_email="joao_bernardi@outlook.com",
