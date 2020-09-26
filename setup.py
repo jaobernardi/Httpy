@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="httpython",
-    version="0.2.6",
+    version="0.2.7",
     author="Jão Bernardi",
     author_email="joao_bernardi@outlook.com",
     description="A simple-to-use framework for http and https servers",
